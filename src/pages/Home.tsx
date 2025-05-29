@@ -1,68 +1,43 @@
 import React from 'react'
-import { Button } from 'antd'
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { Button, Spin, Alert } from 'antd'
+import { useState } from 'react'
 import Test from './Test'
-import { getList } from '@/api/user'
-import { useApi } from '@/hooks/useApi'
+import { createApi } from '@/hooks/useApi'
+
+// 创建用户相关的 API hooks
 
 const Home = () => {
-  console.log('加载了')
-  const [number, setNumber] = useState(0)
-  const userApi = useApi('/abc')
-  const latestNumber = useRef(number)
-  const timestamp = useRef(Date.now())
+  const userApi = createApi('https://uapis.cn/api/myip.php1/xxx')
 
-  const aaa = userApi.useGet(
-    { page: 1, limit: 10 },
-    {
-      enabled: false,
-      gcTime: 0,
-      staleTime: 0,
-    },
-  )
+  const [page, setPage] = useState({
+    page: 2,
+    limit: 10,
+    time: 0,
+  })
 
-  console.log('Home timestamp:', timestamp.current)
-
-  const getX = async () => {
-    try {
-      const res = await getList()
-    } catch (e) {
-      console.log('xxx', e)
-    }
-  }
-  useEffect(() => {
-    console.log(123)
-    getX()
-  }, [])
+  // 使用 userApi hook 获取数据
+  const aaa = userApi.useGet(page)
 
   const handleClick = () => {
-    const newTime = Date.now()
-    console.log('New timestamp:', newTime)
-    timestamp.current = newTime
-    aaa.refetch()
+    setPage((prev) => ({
+      ...prev,
+      page: prev.page + 1,
+      time: new Date().getTime(),
+    }))
   }
 
   return (
     <div>
-      <div>
-        {aaa.isPending ? 'Loading...' : aaa.isError ? 'Error!' : 'Data loaded!'}
-        <br />
-        Status:{' '}
-        {JSON.stringify({
-          isPending: aaa.isPending,
-          isLoading: aaa.isLoading,
-          isError: aaa.isError,
-          time: timestamp.current,
-        })}
-      </div>
-      <Test></Test>
+      <Test />
       <Button type="primary" onClick={handleClick}>
-        Primary12 Button{number}
+        下一页{page.page}
       </Button>
+      {/* 展示数据 */}
+      <div style={{ marginTop: 20 }}>
+        <pre>{JSON.stringify(aaa, null, 2)}</pre>
+      </div>
     </div>
   )
 }
 
-// export default React.memo(Home)
-// export default React.memo(Home)
 export default Home

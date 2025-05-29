@@ -4,90 +4,153 @@ import {
   UseMutationOptions,
   UseQueryOptions,
   QueryClient,
+  QueryKey,
 } from '@tanstack/react-query'
-import { http, RequestOptions } from '../utils/api'
+import { http, RequestOptions, ApiError } from '../utils/api'
 
 // 通用响应类型
-interface ApiResponse<T> {
+export interface ApiResponse<T = any> {
   data: T
   code: number
   message: string
 }
 
-// 通用错误类型
-interface ApiError {
-  status: number
-  statusText: string
-  response?: any
-}
-
 // 查询参数类型
-interface QueryParams {
-  [key: string]: any
+export type QueryParams = Record<string, any>
+
+// 请求配置类型
+export interface RequestConfig extends Omit<RequestOptions, 'method' | 'data'> {
+  invalidateQueries?: QueryKey[]
 }
 
 // 创建 useApi hook
-export function useApi<T = any>(endpoint: string) {
+export function createApi<T = any>(endpoint: string) {
   // GET 请求 hook
-  const useGet = (
+  const useGet = <R = T>(
     params?: QueryParams,
-    options?: Omit<UseQueryOptions<ApiResponse<T>, ApiError>, 'queryKey' | 'queryFn'>,
-    config?: Omit<RequestOptions, 'params'>,
+    options?: Omit<UseQueryOptions<ApiResponse<R>, ApiError>, 'queryKey' | 'queryFn'>,
+    config?: RequestConfig,
   ) => {
-    console.log('useApi params:', params)
-    return useQuery<ApiResponse<T>, ApiError>({
+    return useQuery<ApiResponse<R>, ApiError>({
       queryKey: [endpoint, params],
-      queryFn: () => {
-        console.log('useApi queryFn params:', params)
-        return http.get<ApiResponse<T>>(endpoint, {
-          ...config,
-          params,
-        })
+      queryFn: async () => {
+        try {
+          return await http.get<ApiResponse<R>>(endpoint, {
+            ...config,
+            params,
+          })
+        } catch (error) {
+          if (error instanceof ApiError) {
+            throw error
+          }
+          throw new ApiError(500, 'Unknown error occurred')
+        }
       },
       ...options,
     })
   }
 
   // POST 请求 hook
-  const usePost = <D = any>(
-    options?: Omit<UseMutationOptions<ApiResponse<T>, ApiError, D>, 'mutationFn'>,
-    config?: Omit<RequestOptions, 'params'>,
+  const usePost = <D = any, R = T>(
+    options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, D>, 'mutationFn'>,
+    config?: RequestConfig,
   ) => {
-    return useMutation<ApiResponse<T>, ApiError, D>({
-      mutationFn: (data) => http.post<ApiResponse<T>>(endpoint, data, config),
+    return useMutation<ApiResponse<R>, ApiError, D>({
+      mutationFn: async (data) => {
+        try {
+          const response = await http.post<ApiResponse<R>>(endpoint, data, config)
+          // 自动使相关查询失效
+          if (config?.invalidateQueries) {
+            config.invalidateQueries.forEach((queryKey) => {
+              queryClient.invalidateQueries({ queryKey })
+            })
+          }
+          return response
+        } catch (error) {
+          if (error instanceof ApiError) {
+            throw error
+          }
+          throw new ApiError(500, 'Unknown error occurred')
+        }
+      },
       ...options,
     })
   }
 
   // PUT 请求 hook
-  const usePut = <D = any>(
-    options?: Omit<UseMutationOptions<ApiResponse<T>, ApiError, D>, 'mutationFn'>,
-    config?: Omit<RequestOptions, 'params'>,
+  const usePut = <D = any, R = T>(
+    options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, D>, 'mutationFn'>,
+    config?: RequestConfig,
   ) => {
-    return useMutation<ApiResponse<T>, ApiError, D>({
-      mutationFn: (data) => http.put<ApiResponse<T>>(endpoint, data, config),
+    return useMutation<ApiResponse<R>, ApiError, D>({
+      mutationFn: async (data) => {
+        try {
+          const response = await http.put<ApiResponse<R>>(endpoint, data, config)
+          if (config?.invalidateQueries) {
+            config.invalidateQueries.forEach((queryKey) => {
+              queryClient.invalidateQueries({ queryKey })
+            })
+          }
+          return response
+        } catch (error) {
+          if (error instanceof ApiError) {
+            throw error
+          }
+          throw new ApiError(500, 'Unknown error occurred')
+        }
+      },
       ...options,
     })
   }
 
   // PATCH 请求 hook
-  const usePatch = <D = any>(
-    options?: Omit<UseMutationOptions<ApiResponse<T>, ApiError, D>, 'mutationFn'>,
-    config?: Omit<RequestOptions, 'params'>,
+  const usePatch = <D = any, R = T>(
+    options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, D>, 'mutationFn'>,
+    config?: RequestConfig,
   ) => {
-    return useMutation<ApiResponse<T>, ApiError, D>({
-      mutationFn: (data) => http.patch<ApiResponse<T>>(endpoint, data, config),
+    return useMutation<ApiResponse<R>, ApiError, D>({
+      mutationFn: async (data) => {
+        try {
+          const response = await http.patch<ApiResponse<R>>(endpoint, data, config)
+          if (config?.invalidateQueries) {
+            config.invalidateQueries.forEach((queryKey) => {
+              queryClient.invalidateQueries({ queryKey })
+            })
+          }
+          return response
+        } catch (error) {
+          if (error instanceof ApiError) {
+            throw error
+          }
+          throw new ApiError(500, 'Unknown error occurred')
+        }
+      },
       ...options,
     })
   }
 
   // DELETE 请求 hook
-  const useDelete = (
-    options?: Omit<UseMutationOptions<ApiResponse<T>, ApiError, void>, 'mutationFn'>,
-    config?: Omit<RequestOptions, 'params'>,
+  const useDelete = <R = T>(
+    options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, void>, 'mutationFn'>,
+    config?: RequestConfig,
   ) => {
-    return useMutation<ApiResponse<T>, ApiError>({
-      mutationFn: () => http.delete<ApiResponse<T>>(endpoint, config),
+    return useMutation<ApiResponse<R>, ApiError>({
+      mutationFn: async () => {
+        try {
+          const response = await http.delete<ApiResponse<R>>(endpoint, config)
+          if (config?.invalidateQueries) {
+            config.invalidateQueries.forEach((queryKey) => {
+              queryClient.invalidateQueries({ queryKey })
+            })
+          }
+          return response
+        } catch (error) {
+          if (error instanceof ApiError) {
+            throw error
+          }
+          throw new ApiError(500, 'Unknown error occurred')
+        }
+      },
       ...options,
     })
   }
@@ -105,10 +168,15 @@ export function useApi<T = any>(endpoint: string) {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 30 * 60 * 1000, // 替换 cacheTime
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes
       retry: 3,
       refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 1,
     },
   },
 })
