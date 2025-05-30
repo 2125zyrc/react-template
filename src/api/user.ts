@@ -1,10 +1,10 @@
-import { http } from '@/utils/api'
+import { http } from '@/utils/request'
 
 interface PageParams {
   page: number
   limit: number
 }
 
-export function getList(params?: PageParams) {
-  return http.get('https://uapis.cn/api/myip.php1', { params })
+export function getList(data?: PageParams) {
+  return http.get('https://uapis.cn/api/myip.php1', { data })
 }

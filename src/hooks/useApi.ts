@@ -4,9 +4,10 @@ import {
   UseMutationOptions,
   UseQueryOptions,
   QueryClient,
+  useQueryClient,
   QueryKey,
 } from '@tanstack/react-query'
-import { http, RequestOptions, ApiError } from '../utils/api'
+import { http, RequestOptions, ApiError } from '../utils/request'
 
 // 通用响应类型
 export interface ApiResponse<T = any> {
@@ -55,6 +56,7 @@ export function createApi<T = any>(endpoint: string) {
     options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, D>, 'mutationFn'>,
     config?: RequestConfig,
   ) => {
+    const queryClient = useQueryClient()
     return useMutation<ApiResponse<R>, ApiError, D>({
       mutationFn: async (data) => {
         try {
@@ -82,6 +84,7 @@ export function createApi<T = any>(endpoint: string) {
     options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, D>, 'mutationFn'>,
     config?: RequestConfig,
   ) => {
+    const queryClient = useQueryClient()
     return useMutation<ApiResponse<R>, ApiError, D>({
       mutationFn: async (data) => {
         try {
@@ -108,6 +111,7 @@ export function createApi<T = any>(endpoint: string) {
     options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, D>, 'mutationFn'>,
     config?: RequestConfig,
   ) => {
+    const queryClient = useQueryClient()
     return useMutation<ApiResponse<R>, ApiError, D>({
       mutationFn: async (data) => {
         try {
@@ -134,6 +138,7 @@ export function createApi<T = any>(endpoint: string) {
     options?: Omit<UseMutationOptions<ApiResponse<R>, ApiError, void>, 'mutationFn'>,
     config?: RequestConfig,
   ) => {
+    const queryClient = useQueryClient()
     return useMutation<ApiResponse<R>, ApiError>({
       mutationFn: async () => {
         try {

@@ -21,7 +21,8 @@ export class ApiError extends Error {
 }
 
 // 从环境变量获取配置
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+const PREFIX_PATH = import.meta.env.VITE_API_PREFIX_PATH || ''
 console.log('xxxx', import.meta.env)
 
 // 处理查询参数
@@ -66,7 +67,7 @@ async function request<T = any>(
   }
 
   // 构建完整 URL
-  const url = buildUrl(`https://uapis.cn/api/myip.php/${endpoint}`, options.params)
+  const url = buildUrl(`${BASE_URL}${PREFIX_PATH}${endpoint}`, options.params)
   console.log('API request URL:', url)
 
   const response = await fetch(url, {
