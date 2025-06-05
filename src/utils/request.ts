@@ -1,11 +1,18 @@
 // 类型定义
 export interface RequestOptions {
-  method?: string
+  method: string
   headers?: HeadersInit
   token?: string
   data?: any
   responseType?: 'json' | 'blob' | 'text'
   params?: Record<string, any>
+}
+
+// 业务响应格式
+export interface BusinessResponse<T = any> {
+  code: number
+  message: string
+  data: T
 }
 
 export class ApiError extends Error {
@@ -44,26 +51,22 @@ async function request<T = any>(
   endpoint: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  // Add artificial delay for testing
-  // await new Promise((resolve) => setTimeout(resolve, 1000))
-
   const headers = new Headers(options.headers)
 
   // 设置 Content-Type
-  if (!headers.has('Content-Type') && options.data) {
+  if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
   // 添加认证 Token
-  const token = options.token || localStorage.getItem('token')
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
+  const accesstoken = options.token || localStorage.getItem('accesstoken')
+  if (accesstoken) {
+    headers.set('accesstoken', accesstoken)
   }
-
   // 处理请求体
-  let body: BodyInit | null = null
-  if (options.data) {
-    body = JSON.stringify(options.data)
+  let body = null
+  if (!['GET'].includes(options.method)) {
+    body = options.data ? JSON.stringify(options.data) : '{}'
   }
 
   // 构建完整 URL
@@ -81,7 +84,7 @@ async function request<T = any>(
     try {
       errorData = await response.json()
     } catch {
-      errorData = await response.text()
+      errorData = (await response?.statusText) || ''
     }
     throw new ApiError(response.status, response.statusText, errorData)
   }
@@ -97,29 +100,46 @@ async function request<T = any>(
       return response.blob() as Promise<T>
     case 'text':
       return response.text() as Promise<T>
-    default:
-      return response.json()
+    default: {
+      const data = await response.json()
+      // 处理业务层面的错误码
+      if (data && typeof data.code !== 'undefined') {
+        if (data.code === 500) {
+          throw new ApiError(data.code, data.message || '业务处理失败', data)
+        } else if (data.code === 401) {
+          window.location.href = '/error'
+        }
+        return data as T
+      }
+      return data as T
+    }
   }
 }
 
 // 封装 HTTP 方法
 export const http = {
-  get: <T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'data'>) =>
-    request<T>(endpoint, { ...options, method: 'GET' }),
+  get: <T = any>(
+    endpoint: string,
+    params: any,
+    options?: Omit<RequestOptions, 'method' | 'data' | 'params'>,
+  ) => request<T>(endpoint, { ...options, method: 'GET', params }),
 
   post: <T = any>(
     endpoint: string,
     data: any,
-    options?: Omit<RequestOptions, 'method'>,
+    options?: Omit<RequestOptions, 'method' | 'data' | 'params'>,
   ) => request<T>(endpoint, { ...options, method: 'POST', data }),
 
-  put: <T = any>(endpoint: string, data: any, options?: Omit<RequestOptions, 'method'>) =>
-    request<T>(endpoint, { ...options, method: 'PUT', data }),
+  put: <T = any>(
+    endpoint: string,
+    data: any,
+    options?: Omit<RequestOptions, 'method' | 'data' | 'params'>,
+  ) => request<T>(endpoint, { ...options, method: 'PUT', data }),
 
   patch: <T = any>(
     endpoint: string,
     data: any,
-    options?: Omit<RequestOptions, 'method'>,
+    options?: Omit<RequestOptions, 'method' | 'data' | 'params'>,
   ) => request<T>(endpoint, { ...options, method: 'PATCH', data }),
 
   delete: <T = any>(endpoint: string, options?: Omit<RequestOptions, 'method'>) =>

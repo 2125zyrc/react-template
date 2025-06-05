@@ -1,12 +1,12 @@
 /** A tiny wrapper for localStorage */
-export const ls = {
-  get(key: string) {
-    return JSON.parse(localStorage.getItem(key) || 'null')
+export const storage = {
+  getItem(key: string) {
+    return localStorage.getItem(key)
   },
-  set(key: string, val: any) {
-    localStorage.setItem(key, JSON.stringify(val))
+  setItem(key: string, val: any) {
+    localStorage.setItem(key, val)
   },
-  del(key: string) {
+  removeItem(key: string) {
     localStorage.removeItem(key)
   },
   clear() {
@@ -14,12 +14,12 @@ export const ls = {
   },
 }
 
-const TOKEN_NAME = 'auth_token'
+const TOKEN_NAME = 'accesstoken'
 
 export function getAuthToken() {
-  return ls.get(TOKEN_NAME)
+  return storage.getItem(TOKEN_NAME)
 }
 
 export function setAuthToken(token: string) {
-  ls.set(TOKEN_NAME, token)
+  storage.setItem(TOKEN_NAME, token)
 }

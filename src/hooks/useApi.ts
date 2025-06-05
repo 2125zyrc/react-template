@@ -7,7 +7,7 @@ import {
   useQueryClient,
   QueryKey,
 } from '@tanstack/react-query'
-import { http, RequestOptions, ApiError } from '../utils/request'
+import { http, RequestOptions, ApiError } from '@/utils/request'
 
 // 通用响应类型
 export interface ApiResponse<T = any> {
@@ -170,18 +170,4 @@ export function createApi<T = any>(endpoint: string) {
 }
 
 // 创建并导出 queryClient 实例
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 30 * 60 * 1000, // 30 minutes
-      retry: 3,
-      refetchOnWindowFocus: false,
-      refetchOnMount: true,
-      refetchOnReconnect: true,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-})
+export const queryClient = new QueryClient()
